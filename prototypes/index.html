@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DappleDoc | PR Automation Prototype</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="title-badge">Internship Prototype</span>
+                <h1>DappleDoc PR AI Agent</h1>
+                <p style="color: var(--text-secondary)">Automating the spreadsheet-to-inbox execution cycle.</p>
+            </div>
+            <button id="btn-chain"
+                style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; padding: 0.75rem 1.5rem;">Run
+                End-to-End Agent</button>
+        </header>
+
+        <div class="grid">
+            <!-- PoC 1: Spreadsheet Understanding -->
+            <div class="card">
+                <h3>PoC 1: PR Plan Analysis</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Agent scans the master plan to identify pending tasks.
+                </p>
+                <div id="plan-table-container">
+                    <p>Loading spreadsheet data...</p>
+                </div>
+                <button id="btn-scan-plan" style="margin-top: 1rem;">Run Scan Agent</button>
+            </div>
+
+            <!-- PoC 2 & 3: Selection & Execution -->
+            <div class="card">
+                <h3>PoC 2 & 3: Outreach Execution</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Agent personalizes drafts and prepares Outlook queue.
+                </p>
+                <div id="outreach-output" class="log-container">
+                    <div class="log-entry">Waiting for scan...</div>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button id="btn-personalize" disabled>Personalize All</button>
+                    <button id="btn-send" disabled>Send (Simulated)</button>
+                </div>
+            </div>
+
+            <!-- PoC 4: Response Detection -->
+            <div class="card">
+                <h3>PoC 4: Inbox Monitor</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Agent identifies 'Interested' replies and flags follow-ups.
+                </p>
+                <div id="inbox-output" class="log-container">
+                    <div class="log-entry">Checking inbox...</div>
+                </div>
+                <button id="btn-check-inbox" style="margin-top: 1rem;">Scan Inbox</button>
+            </div>
+
+            <!-- PoC 5: Scheduling -->
+            <div class="card">
+                <h3>PoC 5: Scheduler</h3>
+                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                    Coordinating availability for interviews.
+                </p>
+                <div id="calendar-output" class="log-container">
+                    <div class="log-entry">No active scheduling tasks.</div>
+                </div>
+            </div>
+        </div>
+
+        <footer style="margin-top: 3rem; text-align: center; color: var(--text-secondary); font-size: 0.75rem;">
+            DappleDoc AI Agent Prototype &bull; Internal Development Use Only
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
