@@ -1,0 +1,6 @@
+priority,outlet,reporter_name,beat,angle_fit,geo,contact_email,contact_status,notes
+P1,Tech Outlet Daily,Jordan Lee,Digital health,Trend;Data,National,jlee@techoutletdaily.example,not_contacted,Covers consumer health behavior
+P1,Healthcare Business Weekly,Samara Patel,Healthcare startups,Founder story;Trend,National,spatel@hbweekly.example,not_contacted,Responds to concise pitches
+P2,Consumer Life Magazine,Alyssa Chen,Wellness,Consumer;Data,National,achen@clm.example,not_contacted,Writes about anxiety and health habits
+P2,Chicago Startup News,Matt Rivera,Local startups,Local;Founder story,Chicago,mrivera@csn.example,not_contacted,Prefers local angle and founder interview
+P3,Podcast: The Modern Patient,Erin Brooks,Podcast host,Podcast;Trend,National,erin@modernpatient.example,not_contacted,Books 4 to 6 weeks out

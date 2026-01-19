@@ -1,9 +1,9 @@
 const mockPlan = [
-    { outlet: 'TechCrunch', journalist: 'Sarah Perez', email: 'sarah.p@techcrunch.com', timing: 'Week of Jan 12', draft: 'Tech News', status: 'Pending' },
-    { outlet: 'The AI Podcast', journalist: 'Lex Fridman', email: 'lex@example.com', timing: 'End of Jan', draft: 'Podcast', status: 'Pending' },
-    { outlet: 'The Verge', journalist: 'Nilay Patel', email: 'nilay@theverge.com', timing: 'Feb Start', draft: 'Podcast', status: 'Not Started' },
-    { outlet: 'Wired', journalist: 'Gideon Lichfield', email: 'gideon@wired.com', timing: 'Week of Jan 19', draft: 'Feature Draft', status: 'Pending' },
-    { outlet: 'Daily AI News', journalist: 'John Smith', email: 'john@dailyai.com', timing: 'ASAP', draft: 'Quick Pitch', status: 'Sent' }
+    { outlet: 'Tech Outlet Daily', journalist: 'Jordan Lee', email: 'jlee@techoutletdaily.example', timing: 'Week 1', draft: 'Trend', status: 'Pending' },
+    { outlet: 'Healthcare Business Weekly', journalist: 'Samara Patel', email: 'spatel@hbweekly.example', timing: 'Week 1', draft: 'Founder Story', status: 'Pending' },
+    { outlet: 'Consumer Life Magazine', journalist: 'Alyssa Chen', email: 'achen@clm.example', timing: 'Week 2', draft: 'Consumer', status: 'Not Started' },
+    { outlet: 'Chicago Startup News', journalist: 'Matt Rivera', email: 'mrivera@csn.example', timing: 'Week 2', draft: 'Local', status: 'Pending' },
+    { outlet: 'Podcast: The Modern Patient', journalist: 'Erin Brooks', email: 'erin@modernpatient.example', timing: 'Week 3', draft: 'Podcast', status: 'Not Started' }
 ];
 
 const mockInbox = [
