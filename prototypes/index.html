@@ -48,8 +48,8 @@
                     <div class="log-entry">Waiting for scan...</div>
                 </div>
                 <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                    <button id="btn-personalize" disabled>Personalize All</button>
-                    <button id="btn-send" disabled>Send (Simulated)</button>
+                    <button id="btn-review-outreach" disabled>Review</button>
+                    <button id="btn-send-all-outreach" disabled style="background: var(--success);">Send All</button>
                 </div>
             </div>
 
@@ -62,7 +62,11 @@
                 <div id="inbox-output" class="log-container">
                     <div class="log-entry">Checking inbox...</div>
                 </div>
-                <button id="btn-check-inbox" style="margin-top: 1rem;">Scan Inbox</button>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button id="btn-check-inbox">Scan Inbox</button>
+                    <button id="btn-review-inbox" disabled style="background: var(--accent-primary);">Review</button>
+                    <button id="btn-send-all-inbox" disabled style="background: var(--success);">Send All</button>
+                </div>
             </div>
 
             <!-- PoC 5: Scheduling -->
@@ -81,6 +85,59 @@
             DappleDoc AI Agent Prototype &bull; Internal Development Use Only
         </footer>
     </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="btn-back-to-list" class="btn-secondary"
+                        style="display: none; padding: 0.25rem 0.5rem;">←</button>
+                    <h3 id="modal-title">Review Draft</h3>
+                </div>
+                <button class="btn-secondary" id="btn-close-modal" style="padding: 0.25rem 0.5rem;">&times;</button>
+            </div>
+
+            <!-- View 1: List of Recipients -->
+            <div id="preview-list-container" class="preview-section">
+                <div class="list-header"
+                    style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; padding: 0 0.5rem; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600;">
+                    <span>Recipient</span>
+                    <span>Status</span>
+                </div>
+                <div id="recipient-list" class="recipient-list">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+
+            <!-- View 2: Email Detail Form -->
+            <div id="preview-detail-container" class="preview-section" style="display: none;">
+                <div class="preview-field">
+                    <label>To</label>
+                    <input type="text" id="preview-to" placeholder="Recipient">
+                </div>
+                <div class="preview-field">
+                    <label>Subject</label>
+                    <input type="text" id="preview-subject" placeholder="Subject">
+                </div>
+                <div class="preview-field">
+                    <label>Message</label>
+                    <textarea id="preview-body" placeholder="Email body..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="preview-counter" id="preview-counter"></div>
+                <div class="modal-actions" id="modal-actions-list">
+                    <button id="btn-send-all-modal" style="background: var(--success);">Send All</button>
+                </div>
+                <div class="modal-actions" id="modal-actions-detail" style="display: none;">
+                    <button id="btn-send-individual">Send This</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 
