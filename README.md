@@ -7,6 +7,9 @@ The goal is to reduce the operational overhead of PR campaigns by leveraging AI 
 
 ## 🛠 Project Components
 - **Dashboard Simulation**: A local web application (`prototypes/index.html`) that visualizes the AI's decision-making process.
+- **Strategic Reports**:
+  - [Technical Findings & ROI Report](PR_Technical_Findings_Report.md)
+  - [Agent Architecture & Logic Guide](PR_Agent_Architecture_Logic.md)
 - **Agent Hive Logic**:
   - **Scanner**: Identifies pending tasks in the PR plan.
   - **Personalizer**: Drafts tailored outreach using brand guidance.
