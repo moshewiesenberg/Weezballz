@@ -2,6 +2,7 @@ import csv
 import datetime as dt
 import os
 from pathlib import Path
+from typing import Dict, List, Optional
 
 import modal
 from fastapi import FastAPI, Request
@@ -14,6 +15,7 @@ PERSONA_PATH = Path(__file__).resolve().parent / "persona.md"
 REMOTE_MOCK_DATA_DIR = "/root/mock_data"
 REMOTE_PERSONA_PATH = "/root/persona.md"
 REMOTE_PLAN_PATH = f"{REMOTE_MOCK_DATA_DIR}/pr_plan.csv"
+LOCAL_PLAN_PATH = MOCK_DATA_DIR / "pr_plan.csv"
 
 image = (
     modal.Image.debian_slim()
@@ -26,8 +28,12 @@ app = modal.App("dappledoc-agent")
 web_app = FastAPI(title="DappleDoc PR Agent API")
 
 
-def _read_plan_rows() -> list[dict[str, str]]:
-    with open(REMOTE_PLAN_PATH, newline="", encoding="utf-8") as handle:
+def _read_plan_rows() -> List[Dict[str, str]]:
+    plan_path = Path(REMOTE_PLAN_PATH)
+    if not plan_path.exists():
+        plan_path = LOCAL_PLAN_PATH
+
+    with open(plan_path, newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
 
 
@@ -42,7 +48,7 @@ def _status_bucket(raw_status: str) -> str:
     return "other"
 
 
-def _plan_summary(rows: list[dict[str, str]]) -> dict[str, int]:
+def _plan_summary(rows: List[Dict[str, str]]) -> Dict[str, int]:
     counts = {"pending": 0, "sent": 0, "phase_two": 0, "other": 0}
     for row in rows:
         counts[_status_bucket(row.get("Status", ""))] += 1
@@ -50,7 +56,7 @@ def _plan_summary(rows: list[dict[str, str]]) -> dict[str, int]:
     return counts
 
 
-def _fallback_outreach(row: dict[str, str]) -> dict[str, str]:
+def _fallback_outreach(row: Dict[str, str]) -> Dict[str, str]:
     journalist = row.get("Journalist", "there").strip()
     outlet = row.get("Outlet", "your outlet").strip()
     draft_type = row.get("Draft Type", "Quick Pitch").strip()
@@ -78,12 +84,15 @@ def _fallback_outreach(row: dict[str, str]) -> dict[str, str]:
 
 def _load_persona() -> str:
     try:
-        return Path(REMOTE_PERSONA_PATH).read_text(encoding="utf-8").strip()
+        remote_persona = Path(REMOTE_PERSONA_PATH)
+        if remote_persona.exists():
+            return remote_persona.read_text(encoding="utf-8").strip()
+        return PERSONA_PATH.read_text(encoding="utf-8").strip()
     except FileNotFoundError:
         return "You are a concise PR assistant who writes natural, professional outreach."
 
 
-def _llm_outreach(row: dict[str, str]) -> dict[str, str]:
+def _llm_outreach(row: Dict[str, str]) -> Dict[str, str]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         return _fallback_outreach(row)
@@ -130,7 +139,7 @@ Subject: <subject line>
     return {"subject": subject, "body": body, "model": "gpt-4o-mini"}
 
 
-def _build_outreach_queue(limit: int | None = None) -> dict[str, object]:
+def _build_outreach_queue(limit: Optional[int] = None) -> Dict[str, object]:
     rows = _read_plan_rows()
     pending_rows = [row for row in rows if _status_bucket(row.get("Status", "")) == "pending"]
     if limit is not None:
@@ -171,7 +180,7 @@ def _fallback_reply(body: str) -> str:
     )
 
 
-def _draft_reply(body: str) -> dict[str, str]:
+def _draft_reply(body: str) -> Dict[str, str]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         return {"draft": _fallback_reply(body), "model": "fallback-template"}
