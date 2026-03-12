@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outlook Mockup - DappleDoc Preview</title>
+    <style>
+        :root {
+            --outlook-blue: #0078d4;
+            --outlook-bg: #f3f2f1;
+            --sidebar-width: 350px;
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            background: var(--outlook-bg);
+        }
+
+        .left-nav {
+            width: 50px;
+            background: var(--outlook-blue);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 10px;
+        }
+
+        .folder-list {
+            width: 200px;
+            background: white;
+            border-right: 1px solid #edebe9;
+            padding: 10px;
+        }
+
+        .email-list {
+            flex: 0 0 300px;
+            background: white;
+            border-right: 1px solid #edebe9;
+            overflow-y: auto;
+        }
+
+        .email-content {
+            flex: 1;
+            background: white;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .add-in-sidebar {
+            width: var(--sidebar-width);
+            background: #ffffff;
+            border-left: 1px solid #edebe9;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .header-bar {
+            height: 48px;
+            background: #0078d4;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            font-weight: 600;
+        }
+
+        .email-item {
+            padding: 15px;
+            border-bottom: 1px solid #f3f2f1;
+            cursor: pointer;
+        }
+
+        .email-item.active {
+            background: #f3faff;
+            border-left: 4px solid var(--outlook-blue);
+        }
+
+        .email-subject {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .email-from {
+            font-size: 0.85rem;
+            color: #605e5c;
+        }
+
+        iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+        }
+
+        .mock-ribbon {
+            height: 100px;
+            background: white;
+            border-bottom: 1px solid #edebe9;
+            padding: 10px 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .ribbon-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.75rem;
+            gap: 5px;
+            opacity: 0.8;
+        }
+
+        .ribbon-btn.highlight {
+            border: 1px solid #0078d4;
+            padding: 5px;
+            border-radius: 4px;
+            opacity: 1;
+            background: #f3faff;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-bar">
+        <span>Outlook</span>
+    </div>
+    <div class="app-container">
+        <div class="left-nav">
+            <div style="margin-bottom: 20px;">✉️</div>
+            <div style="margin-bottom: 20px;">📅</div>
+            <div style="margin-bottom: 20px;">👥</div>
+        </div>
+        <div class="folder-list">
+            <div style="font-weight: 600; margin-bottom: 10px;">Favorites</div>
+            <div style="color: var(--outlook-blue); cursor: pointer;">Inbox <span id="inbox-count"
+                    style="float: right; font-weight: normal; color: #605e5c;">10</span></div>
+            <div style="cursor: pointer;">Sent Items</div>
+            <div style="cursor: pointer;">Drafts</div>
+        </div>
+        <div class="email-list" id="email-list-container">
+            <!-- Populated by JS -->
+        </div>
+        <div class="email-content" id="email-detail-view">
+            <div id="no-selection"
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #605e5c;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">✉️</div>
+                <div>Select an item to read</div>
+            </div>
+            <div id="email-viewer" style="display: none;">
+                <div id="view-subject" style="font-size: 1.5rem; margin-bottom: 15px; font-weight: 400;"></div>
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+                    <div id="view-avatar"
+                        style="width: 40px; height: 40px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600;">
+                    </div>
+                    <div>
+                        <div id="view-from-name" style="font-weight: 600;"></div>
+                        <div id="view-from-email" style="font-size: 0.85rem; color: #605e5c;"></div>
+                    </div>
+                </div>
+                <div id="view-body" style="line-height: 1.5; white-space: pre-wrap;"></div>
+            </div>
+        </div>
+        <div class="add-in-sidebar">
+            <div
+                style="height: 48px; border-bottom: 1px solid #edebe9; display: flex; align-items: center; padding: 0 15px; background: #faf9f8;">
+                <span style="font-weight: 600; font-size: 0.9rem;">DappleDoc PR Agent</span>
+            </div>
+            <iframe src="../outlook-addin/src/taskpane.html"></iframe>
+        </div>
+    </div>
+
+    <script>
+        const emails = [
+            { id: 0, from: 'Sarah Perez', email: 's.perez@techdaily.example', subject: 'Re: Story Idea', body: 'Hi DappleDoc Team,\n\nThis sounds interesting. Can you send a demo of the new PR automation tools?\n\nBest,\nSarah', initial: 'SP', color: '#8b5cf6' },
+            { id: 1, from: 'Lex Fridman', email: 'lex@lexfridman.example', subject: 'Re: Guest Suggestion', body: 'I would love to chat. What is your schedule for next month?\n\n- Lex', initial: 'LF', color: '#10b981' },
+            { id: 2, from: 'Internal System', email: 'system@dappledoc.example', subject: 'Out of Office: Sam Smith', body: 'I am away until Monday with no email access.', initial: 'IS', color: '#6b7280' },
+            { id: 3, from: 'Alex Wilhelm', email: 'alex@techcrunch.example', subject: 'DappleDoc Seed Funding', body: 'Checking in on that series A update we discussed last week. Any news?', initial: 'AW', color: '#f59e0b' },
+            { id: 4, from: 'Lauren Goode', email: 'lauren@wired.example', subject: 'Wired Feature Piece', body: 'Hey, I am working on a piece about AI in health and would love to include DappleDoc.', initial: 'LG', color: '#3b82f6' },
+            { id: 5, from: 'Emily Chang', email: 'emily@bloomberg.example', subject: 'Bloomberg Technology Segment', body: 'Would you be available for a quick interview on Tuesday afternoon?', initial: 'EC', color: '#ef4444' },
+            { id: 6, from: 'Casey Newton', email: 'casey@platformer.example', subject: 'Platformer News', body: 'Thanks for the info. I will be including this in the newsletter tomorrow.', initial: 'CN', color: '#8b5cf6' },
+            { id: 7, from: 'Joanna Stern', email: 'joanna@wsj.example', subject: 'WSJ - Skin Care Tech', body: 'Quick question about the AI model accuracy for different skin tones.', initial: 'JS', color: '#10b981' },
+            { id: 8, from: 'Thomas Macaulay', email: 'thomas@tnw.example', subject: 'The Next Web Interview', body: 'I have a few follow up questions regarding the Chicago tech scene.', initial: 'TM', color: '#f59e0b' },
+            { id: 9, from: 'Matt Rivera', email: 'mrivera@chicago.example', subject: 'Local Tech Spotlight', body: 'Are you free for coffee next week to discuss the local impact?', initial: 'MR', color: '#3b82f6' }
+        ];
+
+        function renderEmailList() {
+            const container = document.getElementById('email-list-container');
+            container.innerHTML = emails.map(email => `
+                <div class="email-item" id="mail-${email.id}" onclick="selectEmail(${email.id})">
+                    <div class="email-from">${email.from}</div>
+                    <div class="email-subject">${email.subject}</div>
+                    <div style="font-size: 0.8rem; color: #616161; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        ${email.body.substring(0, 40)}...
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectEmail(id) {
+            document.querySelectorAll('.email-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`mail-${id}`).classList.add('active');
+
+            const email = emails.find(e => e.id === id);
+            document.getElementById('no-selection').style.display = 'none';
+            document.getElementById('email-viewer').style.display = 'block';
+
+            document.getElementById('view-subject').innerText = email.subject;
+            document.getElementById('view-from-name').innerText = email.from;
+            document.getElementById('view-from-email').innerText = email.email;
+            document.getElementById('view-body').innerText = email.body;
+            document.getElementById('view-avatar').innerText = email.initial;
+            document.getElementById('view-avatar').style.backgroundColor = email.color;
+
+            // Notify the add-in sidebar about the selection
+            const sidebarFrame = document.querySelector('.add-in-sidebar iframe');
+            if (sidebarFrame && sidebarFrame.contentWindow) {
+                sidebarFrame.contentWindow.postMessage({
+                    type: 'EMAIL_SELECTED',
+                    email: email
+                }, '*');
+            }
+        }
+
+        renderEmailList();
+        // Select first email by default
+        selectEmail(0);
+    </script>
+</body>
+
+</html>

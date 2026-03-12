@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DappleDoc | PR Automation Agent</title>
+    <!-- Office.js is required for the add-in to interact with Outlook -->
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+    <link rel="stylesheet" href="taskpane.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <span class="title-badge">Human Review MVP</span>
+                <h1>DappleDoc</h1>
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                    <p style="color: var(--text-secondary); font-size: 0.85rem;">PR Plan to Outlook Drafts</p>
+                    <div id="backend-status" class="status-dot tooltip">
+                        <span class="dot"></span>
+                        <span class="tooltiptext">Backend: Connecting...</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Smaller chain button for sidebar -->
+            <button id="btn-chain"
+                style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; padding: 0.5rem 1rem; font-size: 0.8rem;">Build
+                Queue</button>
+        </header>
+
+        <div class="grid">
+            <!-- PoC 1: Spreadsheet Understanding -->
+            <div class="card">
+                <h3>Plan Analysis</h3>
+                <div id="plan-table-container">
+                    <p>Loading plan...</p>
+                </div>
+                <button id="btn-scan-plan" style="margin-top: 1rem; width: 100%;">Generate Draft Queue</button>
+            </div>
+
+            <!-- PoC 2 & 3: Selection & Execution -->
+            <div class="card">
+                <h3>Outreach Review</h3>
+                <div id="outreach-output" class="log-container" style="max-height: 100px;">
+                    <div class="log-entry">Generate drafts from the plan, then review them here.</div>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button id="btn-review-outreach" disabled style="flex: 1;">Review</button>
+                    <button id="btn-send-all-outreach" disabled style="background: var(--success); flex: 1;">Send
+                        All</button>
+                </div>
+            </div>
+
+            <!-- PoC 4: Response Detection -->
+            <div class="card">
+                <h3>Inbox Assistant</h3>
+                <div id="inbox-output" class="log-container" style="max-height: 100px;">
+                    <div class="log-entry">Open an email, then scan to draft a reply.</div>
+                </div>
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button id="btn-check-inbox" style="flex: 1;">Draft Reply</button>
+                    <button id="btn-review-inbox" disabled
+                        style="background: var(--accent-primary); flex: 1;">Review</button>
+                </div>
+            </div>
+        </div>
+
+        <footer style="margin-top: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.70rem;">
+            DappleDoc AI &bull; Internal Use
+        </footer>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="preview-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="btn-back-to-list" class="btn-secondary"
+                        style="display: none; padding: 0.25rem 0.5rem;">←</button>
+                    <h3 id="modal-title">Review Draft</h3>
+                </div>
+                <button class="btn-secondary" id="btn-close-modal" style="padding: 0.25rem 0.5rem;">&times;</button>
+            </div>
+
+            <!-- View 1: List of Recipients -->
+            <div id="preview-list-container" class="preview-section">
+                <div class="list-header"
+                    style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; padding: 0 0.5rem; color: var(--text-secondary); font-size: 0.8rem; font-weight: 600;">
+                    <span>Recipient</span>
+                    <span>Status</span>
+                </div>
+                <div id="recipient-list" class="recipient-list">
+                    <!-- Javascript will populate this -->
+                </div>
+            </div>
+
+            <!-- View 2: Email Detail Form -->
+            <div id="preview-detail-container" class="preview-section" style="display: none;">
+                <div class="preview-field">
+                    <label>To</label>
+                    <input type="text" id="preview-to" placeholder="Recipient">
+                </div>
+                <div class="preview-field">
+                    <label>Subject</label>
+                    <input type="text" id="preview-subject" placeholder="Subject">
+                </div>
+                <div class="preview-field">
+                    <label>Message</label>
+                    <textarea id="preview-body" placeholder="Email body..."></textarea>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="preview-counter" id="preview-counter"></div>
+                <div class="modal-actions" id="modal-actions-list">
+                    <button id="btn-send-all-modal" style="background: var(--success);">Send All</button>
+                </div>
+                <div class="modal-actions" id="modal-actions-detail" style="display: none;">
+                    <button id="btn-send-individual">Send This</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="taskpane.js"></script>
+</body>
+
+</html>

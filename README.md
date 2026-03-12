@@ -1,35 +1,80 @@
-# DappleDoc PR Automation Prototype
+# DappleDoc PR Workflow MVP
 
-This project is an AI-powered agentic workflow designed to automate the manual execution of PR (Public Relations) plans. It demonstrates an "Agent Hive" architecture where specialized agents collaborate to analyze plans, personalize outreach, monitor responses, and schedule meetings.
+This repo now focuses on one concrete outcome:
 
-## 🚀 The Vision
-The goal is to reduce the operational overhead of PR campaigns by leveraging AI to handle repetitive tasks while maintaining a human-like personalization. In a production environment, this system would integrate with Microsoft 365 (Copilot, Excel, Outlook).
+`PR plan CSV -> reviewable outreach drafts in Outlook`
 
-## 🛠 Project Components
-- **Dashboard Simulation**: A local web application (`prototypes/index.html`) that visualizes the AI's decision-making process.
-- **Strategic Reports**:
-  - [Technical Findings & ROI Report](PR_Technical_Findings_Report.md)
-  - [Agent Architecture & Logic Guide](PR_Agent_Architecture_Logic.md)
-- **Agent Hive Logic**:
-  - **Scanner**: Identifies pending tasks in the PR plan.
-  - **Personalizer**: Drafts tailored outreach using brand guidance.
-  - **Monitor**: Tracks inbox replies.
-  - **Scheduler**: Coordinates meetings automatically.
-- **Mock Data**: Sample PR plans and messaging guidance used to ground the AI's logic.
+The project is intentionally human-in-the-loop. DappleDoc generates the outreach queue and the draft copy, but a person still reviews each message inside Outlook before sending.
 
-## 📈 Current Status: Prototype Simulation
-This repository contains a **Visual Prototype**. It simulates the end-to-end workflow of the PR agents. 
+## What Works Now
 
-### How to run the simulation:
-1. Clone the repository.
-2. Open `prototypes/index.html` in any web browser.
-3. Use the interactive controls to step through the agent workflows.
+- [mock_data/pr_plan.csv](mock_data/pr_plan.csv) is the current source of truth for outreach tasks.
+- [backend/modal_agent.py](backend/modal_agent.py) reads the PR plan, filters pending rows, and builds a draft queue.
+- [outlook-addin/src/taskpane.html](outlook-addin/src/taskpane.html) and [outlook-addin/src/taskpane.js](outlook-addin/src/taskpane.js) let you:
+  - load the plan,
+  - generate an outreach queue,
+  - review each draft,
+  - open the draft in Outlook for final review/send.
+- The inbox feature is now a manual assistant:
+  - open one email in Outlook,
+  - click `Draft Reply`,
+  - review the generated reply.
 
-## 🏗 Real-World Implementation
-Beyond this prototype, the full system is designed to run in the **Microsoft 365 Cloud** using:
-- **Microsoft Copilot Studio** for agent orchestration.
-- **Power Automate** for event-driven triggers and email automation.
-- **Excel Online** as the "Ground Truth" for plan management.
+## Current Product Scope
 
----
-*Created as part of the DappleDoc PR Automation project.*
+### MVP
+
+1. Read pending PR tasks from the plan.
+2. Generate draft emails for those tasks.
+3. Let the user review/edit drafts in Outlook.
+4. Support one-email-at-a-time reply drafting.
+
+### Explicitly Deferred to Phase Two
+
+- automatic inbox monitoring
+- automatic calendar scheduling
+- autonomous sending
+- multi-step background orchestration
+- syncing plan status back into Excel/CSV
+
+See [PHASE_TWO_ROADMAP.md](PHASE_TWO_ROADMAP.md) for the next stage.
+
+## Local Files to Know
+
+- [mock_data/pr_plan.csv](mock_data/pr_plan.csv): current PR plan
+- [backend/persona.md](backend/persona.md): writing guidance for generated copy
+- [backend/authenticate_ms.py](backend/authenticate_ms.py): Graph auth helper for later inbox automation
+- [prototypes/index.html](prototypes/index.html): original visual prototype
+
+## Setup Notes
+
+### Backend
+
+The backend is designed for Modal deployment through [backend/deploy_agent.sh](backend/deploy_agent.sh).
+
+Expected secret:
+
+- `OPENAI_API_KEY`
+
+Optional phase-two secrets:
+
+- `MS_CLIENT_ID`
+- `MS_CLIENT_SECRET`
+- `MS_TENANT_ID`
+
+If `OPENAI_API_KEY` is missing, the backend falls back to deterministic template-based draft generation so the MVP still works.
+
+### Outlook Add-in
+
+From [outlook-addin](outlook-addin):
+
+```bash
+npm install
+npm start
+```
+
+The manifest is [outlook-addin/manifest.xml](outlook-addin/manifest.xml).
+
+## Why This Repo Changed
+
+The earlier version tried to jump directly from concept to a fully agentic PR operator. That made the project feel bigger than it was. The repo now centers on the shortest useful workflow we can actually ship and demo.

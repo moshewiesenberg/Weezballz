@@ -1,3 +1,9 @@
 .DS_Store
 *.log
 node_modules/
+outlook-addin/node_modules/
+backend/ms_token.json
+backend/.env
+backend/.env.local
+dist/
+coverage/
