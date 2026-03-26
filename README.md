@@ -75,6 +75,20 @@ npm start
 
 The manifest is [outlook-addin/manifest.xml](outlook-addin/manifest.xml).
 
+### Fastest Local Demo
+
+If Outlook sideloading is getting in the way, use the browser-backed local demo:
+
+```bash
+./run_local_demo.sh
+```
+
+Then open:
+
+- `http://127.0.0.1:9000/demo/outlook_preview.html`
+
+This uses the same PR-plan-to-draft workflow and reply drafting flow, but runs inside the browser preview instead of waiting on Outlook add-in setup.
+
 ## Why This Repo Changed
 
 The earlier version tried to jump directly from concept to a fully agentic PR operator. That made the project feel bigger than it was. The repo now centers on the shortest useful workflow we can actually ship and demo.

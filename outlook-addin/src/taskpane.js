@@ -1,5 +1,11 @@
-const DEFAULT_BACKEND_URL = "https://moshewiesenberg--dappledoc-agent-api.modal.run";
+const DEFAULT_BACKEND_URL = (
+    window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
+)
+    ? "http://127.0.0.1:8000"
+    : "https://moshewiesenberg--dappledoc-agent-api-dev.modal.run";
+
 const BACKEND_URL = localStorage.getItem("DAPPLEDOC_BACKEND_URL") || DEFAULT_BACKEND_URL;
+const OFFICE_AVAILABLE = typeof Office !== "undefined" && typeof Office.onReady === "function";
 
 let planRows = [];
 let outreachQueue = [];
@@ -7,12 +13,20 @@ let inboxQueue = [];
 let currentQueue = [];
 let currentIndex = 0;
 let currentMode = "outreach";
+let demoEmailContext = null;
 
-Office.onReady(() => {
+function boot() {
     bindEvents();
+    bindBrowserDemoBridge();
     checkBackendStatus();
     fetchPlan();
-});
+}
+
+if (OFFICE_AVAILABLE) {
+    Office.onReady(() => boot());
+} else {
+    window.addEventListener("DOMContentLoaded", boot);
+}
 
 function bindEvents() {
     document.getElementById("btn-scan-plan").addEventListener("click", runScan);
@@ -31,6 +45,24 @@ function bindEvents() {
     });
     document.getElementById("preview-body").addEventListener("input", (event) => {
         if (currentQueue[currentIndex]) currentQueue[currentIndex].body = event.target.value;
+    });
+}
+
+function bindBrowserDemoBridge() {
+    window.addEventListener("message", (event) => {
+        if (!event.data || event.data.type !== "EMAIL_SELECTED") return;
+        const email = event.data.email;
+        demoEmailContext = {
+            fromName: email.from,
+            fromEmail: email.email,
+            subject: email.subject,
+            body: email.body
+        };
+
+        const log = document.getElementById("inbox-output");
+        log.innerHTML = "";
+        addLog(log, `Selected demo email from ${email.from}.`, "info");
+        addLog(log, "Click Draft Reply to generate a response.", "info");
     });
 }
 
@@ -134,45 +166,44 @@ async function checkInbox() {
     inboxQueue = [];
     document.getElementById("btn-review-inbox").disabled = true;
 
-    const item = Office.context.mailbox.item;
-    if (!item || !item.body || !item.from) {
-        addLog(log, "Open an email in Outlook first, then click Scan.", "info");
+    const liveItem = getLiveMailboxItem();
+    const context = liveItem
+        ? await extractOfficeEmail(liveItem)
+        : demoEmailContext;
+
+    if (!context) {
+        addLog(log, OFFICE_AVAILABLE
+            ? "Open an email in Outlook first, then click Draft Reply."
+            : "Select an email in the browser demo first, then click Draft Reply.", "info");
         return;
     }
 
-    addLog(log, `Reading "${item.subject}"...`, "info");
+    addLog(log, `Reading "${context.subject}"...`, "info");
 
-    item.body.getAsync(Office.CoercionType.Text, async (result) => {
-        if (result.status !== Office.AsyncResultStatus.Succeeded) {
-            addLog(log, "Could not read the selected email body.", "error");
-            return;
-        }
+    try {
+        const response = await fetch(`${BACKEND_URL}/analyze_email`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ body: context.body })
+        });
+        if (!response.ok) throw new Error("Reply drafting failed");
 
-        try {
-            const response = await fetch(`${BACKEND_URL}/analyze_email`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ body: result.value })
-            });
-            if (!response.ok) throw new Error("Reply drafting failed");
+        const data = await response.json();
+        inboxQueue = [{
+            to: context.fromEmail,
+            displayTo: `${context.fromName} <${context.fromEmail}>`,
+            subject: `RE: ${context.subject}`,
+            body: data.draft || "No draft returned.",
+            outlet: "Inbox",
+            journalist: context.fromName,
+            type: "Reply"
+        }];
 
-            const data = await response.json();
-            inboxQueue = [{
-                to: item.from.emailAddress,
-                displayTo: `${item.from.displayName || item.from.emailAddress} <${item.from.emailAddress}>`,
-                subject: `RE: ${item.subject}`,
-                body: data.draft || "No draft returned.",
-                outlet: "Inbox",
-                journalist: item.from.displayName || item.from.emailAddress,
-                type: "Reply"
-            }];
-
-            addLog(log, "Draft reply ready for review.", "success");
-            document.getElementById("btn-review-inbox").disabled = false;
-        } catch (error) {
-            addLog(log, error.message, "error");
-        }
-    });
+        addLog(log, "Draft reply ready for review.", "success");
+        document.getElementById("btn-review-inbox").disabled = false;
+    } catch (error) {
+        addLog(log, error.message, "error");
+    }
 }
 
 async function runMvpFlow() {
@@ -275,26 +306,70 @@ function sendAll() {
     currentQueue = [];
     closePreview();
     const log = document.getElementById(currentMode === "outreach" ? "outreach-output" : "inbox-output");
-    addLog(log, `${total} item(s) opened in Outlook for review/send.`, "success");
+    addLog(log, `${total} item(s) prepared.`, "success");
 }
 
 function processSend(item) {
-    if (currentMode === "inbox" && Office.context.mailbox.item) {
-        Office.context.mailbox.item.displayReplyAllForm({
+    const liveItem = getLiveMailboxItem();
+
+    if (currentMode === "inbox" && liveItem) {
+        liveItem.displayReplyAllForm({
             htmlBody: item.body.replace(/\n/g, "<br>")
         });
         return;
     }
 
-    Office.context.mailbox.displayNewMessageForm({
-        toRecipients: [item.to],
-        subject: item.subject,
-        htmlBody: item.body.replace(/\n/g, "<br>")
-    });
+    if (liveItem) {
+        Office.context.mailbox.displayNewMessageForm({
+            toRecipients: [item.to],
+            subject: item.subject,
+            htmlBody: item.body.replace(/\n/g, "<br>")
+        });
+    } else {
+        const mailto = buildMailtoUrl(item);
+        window.open(mailto, "_blank");
+        const log = document.getElementById(currentMode === "outreach" ? "outreach-output" : "inbox-output");
+        addLog(log, `Opened draft for ${item.displayTo || item.to} in your mail client.`, "info");
+    }
 
     const planRow = planRows.find((row) => row.Journalist === item.journalist);
     if (planRow) planRow.Status = "Draft Opened";
     renderPlan();
+}
+
+function getLiveMailboxItem() {
+    return OFFICE_AVAILABLE && Office.context && Office.context.mailbox
+        ? Office.context.mailbox.item
+        : null;
+}
+
+function extractOfficeEmail(item) {
+    return new Promise((resolve) => {
+        if (!item || !item.body || !item.from) {
+            resolve(null);
+            return;
+        }
+
+        item.body.getAsync(Office.CoercionType.Text, (result) => {
+            if (result.status !== Office.AsyncResultStatus.Succeeded) {
+                resolve(null);
+                return;
+            }
+
+            resolve({
+                fromName: item.from.displayName || item.from.emailAddress,
+                fromEmail: item.from.emailAddress,
+                subject: item.subject,
+                body: result.value
+            });
+        });
+    });
+}
+
+function buildMailtoUrl(item) {
+    const subject = encodeURIComponent(item.subject);
+    const body = encodeURIComponent(item.body);
+    return `mailto:${encodeURIComponent(item.to)}?subject=${subject}&body=${body}`;
 }
 
 function addLog(container, text, type) {
