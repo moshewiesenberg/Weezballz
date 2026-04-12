@@ -89,6 +89,16 @@ Then open:
 
 This uses the same PR-plan-to-draft workflow and reply drafting flow, but runs inside the browser preview instead of waiting on Outlook add-in setup.
 
+## Recommended Boss Demo Path
+
+For a live walkthrough today, use the browser-backed local demo above.
+
+Why this is the best path right now:
+
+- it avoids Outlook sideloading friction,
+- it prefers the local backend when launched from `127.0.0.1`,
+- and if the Modal OpenAI key is out of quota, the app still generates polished guided-template drafts instead of failing.
+
 ## Why This Repo Changed
 
 The earlier version tried to jump directly from concept to a fully agentic PR operator. That made the project feel bigger than it was. The repo now centers on the shortest useful workflow we can actually ship and demo.

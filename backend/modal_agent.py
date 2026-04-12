@@ -56,30 +56,71 @@ def _plan_summary(rows: List[Dict[str, str]]) -> Dict[str, int]:
     return counts
 
 
+def _normalize_fragment(text: str, default: str) -> str:
+    cleaned = " ".join((text or "").strip().split())
+    if not cleaned:
+        return default
+    return cleaned.rstrip(".")
+
+
+def _draft_angle(draft_type: str, outlet: str, notes: str) -> str:
+    note_fragment = _normalize_fragment(notes, "a practical AI workflow for modern PR teams")
+    draft_key = (draft_type or "").strip().lower()
+
+    if draft_key == "tech news":
+        return (
+            f"there may be a timely story here for {outlet} around {note_fragment.lower()}, "
+            "especially because the product turns a campaign plan into ready-to-review outreach"
+        )
+    if draft_key == "podcast":
+        return (
+            f"it feels like a strong podcast conversation for {outlet} around {note_fragment.lower()}, "
+            "with a concrete example of where human review still matters"
+        )
+    if draft_key == "feature draft":
+        return (
+            f"there could be a thoughtful feature angle for {outlet} around {note_fragment.lower()}, "
+            "grounded in how AI agents fit into real team workflows"
+        )
+    return f"the angle on {note_fragment.lower()} seems relevant for {outlet}'s audience"
+
+
+def _cta_line(timing: str) -> str:
+    timing_key = (timing or "").strip().lower()
+    if "asap" in timing_key or "this week" in timing_key:
+        return "If helpful, I can send a short overview and product screenshots right away."
+    if "next week" in timing_key or "week of" in timing_key or "late" in timing_key or "end of" in timing_key:
+        return "If helpful, I can send a short overview, product screenshots, or line up a quick walkthrough next week."
+    return "If helpful, I can send a short overview, product screenshots, or a quick walkthrough."
+
+
 def _fallback_outreach(row: Dict[str, str]) -> Dict[str, str]:
     journalist = row.get("Journalist", "there").strip()
     outlet = row.get("Outlet", "your outlet").strip()
     draft_type = row.get("Draft Type", "Quick Pitch").strip()
     notes = row.get("Notes", "").strip()
+    timing = row.get("Suggested Timing", "").strip()
 
     subject_map = {
-        "Tech News": f"Story idea for {outlet}: DappleDoc's AI PR workflow",
-        "Podcast": f"Guest idea for {outlet}: DappleDoc on AI-powered PR execution",
-        "Feature Draft": f"Feature idea for {outlet}: the spreadsheet-to-outlook workflow",
-        "Quick Pitch": f"Quick intro for {outlet}: DappleDoc",
+        "Tech News": f"Story idea for {outlet}: DappleDoc turns PR plans into reviewable drafts",
+        "Podcast": f"Podcast idea for {outlet}: where AI helps PR teams move faster",
+        "Feature Draft": f"Feature idea for {outlet}: what AI should automate and what humans should review",
+        "Quick Pitch": f"Quick intro for {outlet}: DappleDoc for PR teams",
     }
     subject = subject_map.get(draft_type, f"{draft_type} idea for {outlet}: DappleDoc")
+    angle = _draft_angle(draft_type, outlet, notes)
+    cta = _cta_line(timing)
 
     body = (
         f"Hi {journalist},\n\n"
-        f"I'm reaching out from DappleDoc. We're building a human-in-the-loop PR workflow "
-        f"that turns campaign plans into reviewable outreach drafts inside Outlook.\n\n"
-        f"I thought this could be a fit for {outlet} because {notes or 'it shows a practical AI workflow for PR teams'}.\n\n"
-        "If useful, I can send a short overview or walk you through the workflow.\n\n"
+        "I'm reaching out from DappleDoc. We're building a human-reviewed PR workflow that turns "
+        "campaign plans into ready-to-edit outreach drafts and reply suggestions inside Outlook.\n\n"
+        f"I thought this could be a fit for {outlet} because {angle}.\n\n"
+        f"{cta}\n\n"
         "Best,\n"
         "[Your Name]"
     )
-    return {"subject": subject, "body": body, "model": "fallback-template"}
+    return {"subject": subject, "body": body, "model": "guided-template"}
 
 
 def _load_persona() -> str:
@@ -121,13 +162,18 @@ Subject: <subject line>
 <email body>
 """.strip()
 
-    client = OpenAI(api_key=api_key)
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        temperature=0.5,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    content = response.choices[0].message.content or ""
+    try:
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.5,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        content = response.choices[0].message.content or ""
+    except Exception as exc:
+        print(f"LLM outreach generation failed, falling back to template: {exc}")
+        return _fallback_outreach(row)
+
     if "Subject:" not in content:
         return _fallback_outreach(row)
 
@@ -172,7 +218,26 @@ def _build_outreach_queue(limit: Optional[int] = None) -> Dict[str, object]:
     }
 
 
-def _fallback_reply(body: str) -> str:
+def _fallback_reply(subject: str, body: str) -> str:
+    combined = f"{subject}\n{body}".lower()
+
+    if any(term in combined for term in ["demo", "walkthrough", "next week", "call", "chat", "meet", "meeting"]):
+        return (
+            "Thanks for the note. Happy to set up a quick walkthrough.\n\n"
+            "I can send a few times for next week, or you can use [Calendar Link] if that's easier. "
+            "If there is anything specific you want to see, I can tailor the demo around it.\n\n"
+            "Best,\n"
+            "[Your Name]"
+        )
+
+    if any(term in combined for term in ["learn more", "more info", "more information", "details", "context", "overview"]):
+        return (
+            "Thanks for reaching out. Happy to send more context on DappleDoc.\n\n"
+            "I can share a short overview, a few screenshots, and a quick summary of how the workflow fits into a PR team's day-to-day process.\n\n"
+            "Best,\n"
+            "[Your Name]"
+        )
+
     return (
         "Thanks for the note. Happy to send more context and propose a few times for a quick chat.\n\n"
         "Best,\n"
@@ -180,10 +245,10 @@ def _fallback_reply(body: str) -> str:
     )
 
 
-def _draft_reply(body: str) -> Dict[str, str]:
+def _draft_reply(subject: str, body: str) -> Dict[str, str]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        return {"draft": _fallback_reply(body), "model": "fallback-template"}
+        return {"draft": _fallback_reply(subject, body), "model": "guided-template"}
 
     from openai import OpenAI
 
@@ -193,18 +258,26 @@ def _draft_reply(body: str) -> Dict[str, str]:
 
 Draft a short professional reply to the following inbound email. Keep it concise and ready for human review.
 
+Subject:
+{subject}
+
 Inbound email:
 {body}
 """.strip()
 
-    client = OpenAI(api_key=api_key)
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        temperature=0.4,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    try:
+        client = OpenAI(api_key=api_key)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            temperature=0.4,
+            messages=[{"role": "user", "content": prompt}],
+        )
+    except Exception as exc:
+        print(f"LLM reply generation failed, falling back to template: {exc}")
+        return {"draft": _fallback_reply(subject, body), "model": "guided-template"}
+
     return {
-        "draft": response.choices[0].message.content or _fallback_reply(body),
+        "draft": response.choices[0].message.content or _fallback_reply(subject, body),
         "model": "gpt-4o-mini",
     }
 
@@ -216,6 +289,7 @@ async def status():
     return {
         "status": "online",
         "mode": "mvp",
+        "llmConfigured": bool(os.environ.get("OPENAI_API_KEY")),
         "timestamp": dt.datetime.utcnow().replace(microsecond=0).isoformat() + "Z",
         "summary": _plan_summary(rows),
         "phaseTwo": {
@@ -250,13 +324,14 @@ async def trigger_run():
 @web_app.post("/analyze_email")
 async def analyze_email(request: Request):
     data = await request.json()
+    subject = (data.get("subject") or "").strip()
     body = (data.get("body") or "").strip()
     if not body:
         return {"error": "No email body provided."}
-    return _draft_reply(body)
+    return _draft_reply(subject, body)
 
 
-@app.function(image=image)
+@app.function(image=image, secrets=[modal.Secret.from_name("dappledoc-secrets")])
 @modal.asgi_app()
 def api():
     return web_app

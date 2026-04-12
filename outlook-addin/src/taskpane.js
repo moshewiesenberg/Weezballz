@@ -1,10 +1,6 @@
-const DEFAULT_BACKEND_URL = (
-    window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost"
-)
-    ? "http://127.0.0.1:8000"
-    : "https://moshewiesenberg--dappledoc-agent-api-dev.modal.run";
-
-const BACKEND_URL = localStorage.getItem("DAPPLEDOC_BACKEND_URL") || DEFAULT_BACKEND_URL;
+const LOCAL_BACKEND_URL = "http://127.0.0.1:8000";
+const REMOTE_BACKEND_URL = "https://moshewiesenberg--dappledoc-agent-api.modal.run";
+const BACKEND_OVERRIDE = localStorage.getItem("DAPPLEDOC_BACKEND_URL");
 const OFFICE_AVAILABLE = typeof Office !== "undefined" && typeof Office.onReady === "function";
 
 let planRows = [];
@@ -14,12 +10,14 @@ let currentQueue = [];
 let currentIndex = 0;
 let currentMode = "outreach";
 let demoEmailContext = null;
+let backendUrl = BACKEND_OVERRIDE;
 
-function boot() {
+async function boot() {
+    backendUrl = await resolveBackendUrl();
     bindEvents();
     bindBrowserDemoBridge();
-    checkBackendStatus();
-    fetchPlan();
+    await checkBackendStatus();
+    await fetchPlan();
 }
 
 if (OFFICE_AVAILABLE) {
@@ -71,12 +69,14 @@ async function checkBackendStatus() {
     const tooltipEl = statusEl.querySelector(".tooltiptext");
 
     try {
-        const response = await fetch(`${BACKEND_URL}/status`);
+        const response = await fetch(`${backendUrl}/status`);
         if (!response.ok) throw new Error("offline");
         const data = await response.json();
         statusEl.classList.add("online");
         statusEl.classList.remove("offline");
-        tooltipEl.innerText = `Backend: Online (${data.mode})`;
+        const modeLabel = data.llmConfigured ? `${data.mode} + llm` : data.mode;
+        const backendLabel = backendUrl === LOCAL_BACKEND_URL ? "local demo" : "remote";
+        tooltipEl.innerText = `Backend: Online (${backendLabel}, ${modeLabel})`;
     } catch (error) {
         statusEl.classList.add("offline");
         statusEl.classList.remove("online");
@@ -89,7 +89,7 @@ async function fetchPlan() {
     container.innerHTML = "<p>Loading plan...</p>";
 
     try {
-        const response = await fetch(`${BACKEND_URL}/get_plan`);
+        const response = await fetch(`${backendUrl}/get_plan`);
         if (!response.ok) throw new Error("Failed to load plan");
         const data = await response.json();
         planRows = data.rows || [];
@@ -128,7 +128,7 @@ async function runScan() {
     addLog(log, "Reading PR plan and generating review queue...", "info");
 
     try {
-        const response = await fetch(`${BACKEND_URL}/generate_outreach_queue`, {
+        const response = await fetch(`${backendUrl}/generate_outreach_queue`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({})
@@ -181,10 +181,10 @@ async function checkInbox() {
     addLog(log, `Reading "${context.subject}"...`, "info");
 
     try {
-        const response = await fetch(`${BACKEND_URL}/analyze_email`, {
+        const response = await fetch(`${backendUrl}/analyze_email`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ body: context.body })
+            body: JSON.stringify({ subject: context.subject, body: context.body })
         });
         if (!response.ok) throw new Error("Reply drafting failed");
 
@@ -370,6 +370,32 @@ function buildMailtoUrl(item) {
     const subject = encodeURIComponent(item.subject);
     const body = encodeURIComponent(item.body);
     return `mailto:${encodeURIComponent(item.to)}?subject=${subject}&body=${body}`;
+}
+
+async function resolveBackendUrl() {
+    if (BACKEND_OVERRIDE) return BACKEND_OVERRIDE;
+
+    const localStatus = await fetchStatus(LOCAL_BACKEND_URL);
+    const isLocalBrowserDemo = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
+
+    if (isLocalBrowserDemo && localStatus) return LOCAL_BACKEND_URL;
+
+    const remoteStatus = await fetchStatus(REMOTE_BACKEND_URL);
+    if (localStatus?.llmConfigured) return LOCAL_BACKEND_URL;
+    if (remoteStatus?.llmConfigured) return REMOTE_BACKEND_URL;
+    if (localStatus) return LOCAL_BACKEND_URL;
+    if (remoteStatus) return REMOTE_BACKEND_URL;
+    return LOCAL_BACKEND_URL;
+}
+
+async function fetchStatus(url) {
+    try {
+        const response = await fetch(`${url}/status`);
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (error) {
+        return null;
+    }
 }
 
 function addLog(container, text, type) {
