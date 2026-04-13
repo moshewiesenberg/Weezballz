@@ -377,10 +377,16 @@ async function resolveBackendUrl() {
 
     const localStatus = await fetchStatus(LOCAL_BACKEND_URL);
     const isLocalBrowserDemo = window.location.hostname === "127.0.0.1" || window.location.hostname === "localhost";
-
-    if (isLocalBrowserDemo && localStatus) return LOCAL_BACKEND_URL;
-
     const remoteStatus = await fetchStatus(REMOTE_BACKEND_URL);
+
+    if (isLocalBrowserDemo) {
+        if (localStatus?.llmConfigured) return LOCAL_BACKEND_URL;
+        if (remoteStatus?.llmConfigured) return REMOTE_BACKEND_URL;
+        if (localStatus) return LOCAL_BACKEND_URL;
+        if (remoteStatus) return REMOTE_BACKEND_URL;
+        return LOCAL_BACKEND_URL;
+    }
+
     if (localStatus?.llmConfigured) return LOCAL_BACKEND_URL;
     if (remoteStatus?.llmConfigured) return REMOTE_BACKEND_URL;
     if (localStatus) return LOCAL_BACKEND_URL;
