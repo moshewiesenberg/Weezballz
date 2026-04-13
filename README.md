@@ -64,6 +64,28 @@ Optional phase-two secrets:
 
 If `OPENAI_API_KEY` is missing, the backend falls back to deterministic template-based draft generation so the MVP still works.
 
+### Restoring Live OpenAI Drafting
+
+Right now the deployed key is present but out of quota, so the app falls back to `guided-template` mode.
+
+To restore live `gpt-4o-mini` drafting:
+
+1. Make sure your OpenAI API billing is active and the account has available credits or spend headroom.
+2. Create a fresh API key in the OpenAI platform.
+3. Export it in your shell:
+
+```bash
+export OPENAI_API_KEY="sk-..."
+```
+
+4. Run the readiness script:
+
+```bash
+python3 backend/openai_readiness.py --sync-modal-secret --redeploy --verify-remote
+```
+
+If everything is healthy, the final remote check should report `firstGenerationMode` as `gpt-4o-mini` instead of `guided-template`.
+
 ### Outlook Add-in
 
 From [outlook-addin](outlook-addin):

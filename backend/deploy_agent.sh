@@ -11,6 +11,11 @@ if ! $MODAL_BIN secret list | grep -q "dappledoc-secrets"; then
     echo "Add OPENAI_API_KEY later if you want model-generated copy."
 fi
 
+if [[ -n "${OPENAI_API_KEY:-}" ]]; then
+    echo "Syncing OPENAI_API_KEY into Modal secret..."
+    $MODAL_BIN secret create dappledoc-secrets OPENAI_API_KEY="$OPENAI_API_KEY" --force
+fi
+
 echo "Deploying DappleDoc Agent to Modal..."
 $MODAL_BIN deploy backend/modal_agent.py
 
